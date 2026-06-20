@@ -7,12 +7,8 @@
 #include <vector>
 #include <string>
 
-// ─── Constantes ────────────────────────────────────────────────────────────
-
 static const uint32_t MEMORY_SIZE = 0x100000; // 1 MB de memoria plana
 static const uint32_t LOAD_ADDR   = 0x00000000;
-
-// ─── Estado del simulador ──────────────────────────────────────────────────
 
 struct Simulator {
     uint32_t pc;
@@ -27,7 +23,6 @@ struct Simulator {
     }
 };
 
-// ─── Acceso a memoria (little-endian) ─────────────────────────────────────
 
 bool addr_valid(uint32_t addr, uint32_t size) {
     return (uint64_t)addr + size <= MEMORY_SIZE;
@@ -101,8 +96,6 @@ void mem_write_word(Simulator& sim, uint32_t addr, uint32_t val) {
     sim.mem[addr + 3] = (val >> 24) & 0xFF;
 }
 
-// ─── Carga del binario ─────────────────────────────────────────────────────
-
 bool load_binary(Simulator& sim, const std::string& path) {
     std::ifstream f(path, std::ios::binary | std::ios::ate);
     if (!f.is_open()) {
@@ -130,13 +123,10 @@ bool load_binary(Simulator& sim, const std::string& path) {
     return true;
 }
 
-// ─── Forward declaration de execute ───────────────────────────────────────
-
 void execute(Simulator& sim);
 std::string disassemble(uint32_t instr);
 extern bool g_verbose_print;
 
-// ─── Nombres de registros ──────────────────────────────────────────────────
 
 static const char* REG_NAMES[32] = {
     "x0","x1","x2","x3","x4","x5","x6","x7",
@@ -161,8 +151,6 @@ int reg_index(const std::string& name) {
     }
     return -1;
 }
-
-// ─── Comandos ──────────────────────────────────────────────────────────────
 
 void cmd_pc(Simulator& sim) {
     std::cout << "pc = 0x"
@@ -251,7 +239,7 @@ void cmd_run(Simulator& sim) {
 
     uint32_t prev_pc = sim.pc;
     uint64_t instr_count = 0;
-    const uint64_t MAX_INSTR = 5'000'000; // límite de seguridad
+    const uint64_t MAX_INSTR = 5'000'000; 
 
     while (sim.running) {
         prev_pc = sim.pc;
@@ -292,8 +280,6 @@ void cmd_help() {
         << "  reset             - Reinicia el simulador\n"
         << "  exit              - Sale del simulador\n";
 }
-
-// ─── Loop principal ────────────────────────────────────────────────────────
 
 void repl(Simulator& sim) {
     std::string line;
@@ -343,8 +329,6 @@ void repl(Simulator& sim) {
     }
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────
-
 int main(int argc, char* argv[]) {
     Simulator sim;
 
@@ -363,7 +347,6 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-// ─── Decode helpers ────────────────────────────────────────────────────────
 
 static inline uint32_t bits(uint32_t instr, int hi, int lo) {
     return (instr >> lo) & ((1u << (hi - lo + 1)) - 1);
@@ -438,8 +421,6 @@ Decoded decode(uint32_t instr) {
 
     return d;
 }
-
-// ─── Desensamblador ────────────────────────────────────────────────────────
 
 static const char* abi_name(uint32_t reg) {
     static const char* ABI[32] = {
@@ -518,7 +499,7 @@ std::string disassemble(uint32_t instr) {
     return out.str();
 }
 
-// ─── Execute ───────────────────────────────────────────────────────────────
+//Execute 
 
 bool g_verbose_print = true; // controla si execute() imprime cada instrucción
 
@@ -547,7 +528,7 @@ void execute(Simulator& sim) {
                   << ":  " << disassemble(instr) << "\n" << std::dec;
     }
 
-    // x0 siempre es 0 (lectura segura)
+    // x0 siempre es 0 
     sim.regs[0] = 0;
 
     int32_t  rs1s = (int32_t)sim.regs[d.rs1];
@@ -557,7 +538,7 @@ void execute(Simulator& sim) {
 
     switch (d.opcode) {
 
-    // ── Loads (I) ─────────────────────────────────────────────────────────
+    // Loads (I)
     case 0x03: {
         uint32_t addr = (uint32_t)(rs1s + d.imm);
         uint32_t val  = 0;
@@ -575,7 +556,7 @@ void execute(Simulator& sim) {
         break;
     }
 
-    // ── Op-Imm (I) ────────────────────────────────────────────────────────
+    //Op-Imm (I) 
     case 0x13: {
         uint32_t shamt = (uint32_t)d.imm & 0x1F;
         uint32_t result = 0;
@@ -599,12 +580,12 @@ void execute(Simulator& sim) {
         break;
     }
 
-    // ── AUIPC (U) ─────────────────────────────────────────────────────────
+    //U
     case 0x17:
         if (d.rd != 0) sim.regs[d.rd] = sim.pc + (uint32_t)d.imm;
         break;
 
-    // ── Stores (S) ────────────────────────────────────────────────────────
+    // Stores (S)
     case 0x23: {
         uint32_t addr = (uint32_t)(rs1s + d.imm);
         switch (d.funct3) {
@@ -618,7 +599,7 @@ void execute(Simulator& sim) {
         break;
     }
 
-    // ── Op (R) ────────────────────────────────────────────────────────────
+    // Op (R)
     case 0x33: {
         uint32_t shamt = rs2u & 0x1F;
         uint32_t result = 0;
@@ -645,12 +626,12 @@ void execute(Simulator& sim) {
         break;
     }
 
-    // ── LUI (U) ───────────────────────────────────────────────────────────
+    // LUI (U)
     case 0x37:
         if (d.rd != 0) sim.regs[d.rd] = (uint32_t)d.imm;
         break;
 
-    // ── Branch (B) ────────────────────────────────────────────────────────
+    // Branch (B) 
     case 0x63: {
         bool taken = false;
         switch (d.funct3) {
@@ -668,7 +649,7 @@ void execute(Simulator& sim) {
         break;
     }
 
-    // ── JALR (I) ──────────────────────────────────────────────────────────
+    // JALR (I) 
     case 0x67: {
         uint32_t target = (uint32_t)(rs1s + d.imm) & ~1u;
         if (d.rd != 0) sim.regs[d.rd] = next_pc;
@@ -676,13 +657,13 @@ void execute(Simulator& sim) {
         break;
     }
 
-    // ── JAL (J) ───────────────────────────────────────────────────────────
+    // JAL (J) 
     case 0x6F:
         if (d.rd != 0) sim.regs[d.rd] = next_pc;
         next_pc = (uint32_t)((int32_t)sim.pc + d.imm);
         break;
 
-    // ── ECALL ─────────────────────────────────────────────────────────────
+    // ECALL 
     case 0x73: {
         uint32_t syscall = sim.regs[17]; // a7
         switch (syscall) {
