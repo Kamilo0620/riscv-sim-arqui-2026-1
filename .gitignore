@@ -1,0 +1,6 @@
+riscv-sim
+riscv-sim.exe
+*.o
+*.obj
+build/
+.vscode/
