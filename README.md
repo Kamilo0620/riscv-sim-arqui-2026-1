@@ -137,6 +137,3 @@ Para reproducir las pruebas:
 > regs x10
 ```
 
-## Autor
-
-Kamilo — UTEC, CS3051 Arquitectura de Computadores, 2025-II.
